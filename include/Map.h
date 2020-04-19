@@ -26,7 +26,7 @@
 #include <set>
 
 #include <mutex>
-
+#include "Locater.h"
 
 
 namespace ORB_SLAM2
@@ -34,6 +34,7 @@ namespace ORB_SLAM2
 
 class MapPoint;
 class KeyFrame;
+class Locater;
 
 class Map
 {

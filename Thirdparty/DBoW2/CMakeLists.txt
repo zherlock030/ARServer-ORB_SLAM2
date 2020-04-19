@@ -1,6 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(DBoW2)
-
+# Temp for my mac
+set(OpenCV_DIR /usr/local/opt/opencv@3/share/OpenCV)
 set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall  -O3 -march=native")
 

@@ -1,9 +1,18 @@
 cmake_minimum_required(VERSION 2.8)
 project(ORB_SLAM2)
+# Temp for my mac
+set(OpenCV_DIR /usr/local/opt/opencv@3/share/OpenCV)
+include(FindProtobuf)
+find_package(Protobuf REQUIRED)
+find_package(gRPC CONFIG REQUIRED)
 
-IF(NOT CMAKE_BUILD_TYPE)
+include_directories(
+        ${PROTOBUF_INCLUDE_DIR}
+)
+
+#IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
-ENDIF()
+#ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
@@ -68,14 +77,22 @@ src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
 src/Viewer.cc
+        src/Osmap.cpp
+        src/osmap.pb.cc
+        src/Locater.cpp
+        src/Transfer.cpp
+        src/viewmatrix.grpc.pb.cc
+        src/viewmatrix.pb.cc
 )
-
+# Temp for my mac
 target_link_libraries(${PROJECT_NAME}
+        gRPC::grpc++
+        ${PROTOBUF_LIBRARIES}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
-${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
-${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
+${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.dylib
+${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.dylib
 )
 
 # Build examples
@@ -111,3 +128,12 @@ add_executable(mono_euroc
 Examples/Monocular/mono_euroc.cc)
 target_link_libraries(mono_euroc ${PROJECT_NAME})
 
+add_executable(mono_ipcam
+        Examples/Monocular/mono_ipcam.cc)
+target_link_libraries(mono_ipcam ${PROJECT_NAME})
+
+# Build tools
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/tools)
+add_executable(bin_vocabulary
+        tools/bin_vocabulary.cc)
+target_link_libraries(bin_vocabulary ${PROJECT_NAME})

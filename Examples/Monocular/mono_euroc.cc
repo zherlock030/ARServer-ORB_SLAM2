@@ -27,6 +27,7 @@
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
+#include "Osmap.h"
 
 using namespace std;
 
@@ -56,6 +57,7 @@ int main(int argc, char **argv)
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM2::System SLAM(argv[1],argv[2],ORB_SLAM2::System::MONOCULAR,true);
+    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;
@@ -66,6 +68,8 @@ int main(int argc, char **argv)
     cout << "Images in the sequence: " << nImages << endl << endl;
 
     // Main loop
+    int main_error = 0;
+    std::thread runthread([&]() {  // Start in new thread
     cv::Mat im;
     for(int ni=0; ni<nImages; ni++)
     {
@@ -77,7 +81,9 @@ int main(int argc, char **argv)
         {
             cerr << endl << "Failed to load image at: "
                  <<  vstrImageFilenames[ni] << endl;
-            return 1;
+            main_error = 1;
+            return;
+//            return 1;
         }
 
 #ifdef COMPILEDWITHC11
@@ -88,6 +94,9 @@ int main(int argc, char **argv)
 
         // Pass the image to the SLAM system
         SLAM.TrackMonocular(im,tframe);
+        if(ni==0){
+            osmap.mapLoad("myFirstMap.yaml");
+        }
 
 #ifdef COMPILEDWITHC11
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
@@ -110,7 +119,21 @@ int main(int argc, char **argv)
             usleep((T-ttrack)*1e6);
     }
 
+        cout << "End of for loop" << endl;
+        // SLAM.Shutdown();
+    }); // End the thread
+
+    // Start the visualization thread
+    SLAM.StartViewer();
+
+    cout << "Viewer started, waiting for thread." << endl;
+    runthread.join();
+    if (main_error != 0)
+        return main_error;
+    cout << "Tracking thread joined..." << endl;
+
     // Stop all threads
+//    osmap.mapSave("myFirstMap");
     SLAM.Shutdown();
 
     // Tracking time statistics

@@ -54,7 +54,9 @@ private:
     float mCameraSize;
     float mCameraLineWidth;
 
+public:
     cv::Mat mCameraPose;
+private:
 
     std::mutex mMutexCamera;
 };
