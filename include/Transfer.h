@@ -17,6 +17,9 @@ public:
     Transfer(ORB_SLAM2::System* system):system(system){}
 
     Status GetViewMatrix(ServerContext* context, const Request* request, Matrix* response);
+
+    static int count;
+    static clock_t last_time;
 };
 
 

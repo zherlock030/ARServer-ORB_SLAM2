@@ -20,7 +20,6 @@
 
 #include "Viewer.h"
 #include <pangolin/pangolin.h>
-
 #include <mutex>
 
 namespace ORB_SLAM2 {
@@ -31,6 +30,7 @@ Viewer::Viewer(System *pSystem, FrameDrawer *pFrameDrawer, MapDrawer *pMapDrawer
         mbFinishRequested(false), mbFinished(true), mbStopped(true), mbStopRequested(false),locater(strSettingPath) {
     cv::FileStorage fSettings(strSettingPath, cv::FileStorage::READ);
 
+    modelViewMatrix = Mat(4,4,CV_32F);
     float fps = fSettings["Camera.fps"];
     if (fps < 1)
         fps = 30;
@@ -95,9 +95,11 @@ void Viewer::Run() {
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
         mpMapDrawer->GetCurrentOpenGLCameraMatrix(Twc);
-
+        updateModelViewMatrix(Twc);
         if (menuFollowCamera && bFollow) {
             s_cam.Follow(Twc);
+//            auto mat = s_cam.GetModelViewMatrix();
+
         } else if (menuFollowCamera && !bFollow) {
             s_cam.SetModelViewMatrix(
                     pangolin::ModelViewLookAt(mViewpointX, mViewpointY, mViewpointZ, 0, 0, 0, 0.0, -1.0, 0.0));
@@ -176,6 +178,14 @@ void Viewer::Run() {
     }
 
     SetFinish();
+}
+
+void Viewer::updateModelViewMatrix(pangolin::OpenGlMatrix& mat){
+    for (int i = 0; i < 4; ++i) {
+        for (int j = 0; j < 4; ++j) {
+            modelViewMatrix.at<float>(i,j)=mat(i,j);
+        }
+    }
 }
 
 void Viewer::RequestFinish() {

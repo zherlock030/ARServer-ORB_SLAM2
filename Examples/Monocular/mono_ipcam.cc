@@ -32,6 +32,7 @@
 #include "viewmatrix.grpc.pb.h"
 #include "Transfer.h"
 #include <grpcpp/grpcpp.h>
+#include <mutex>
 
 //using grpc::ServerBuilder ;
 
@@ -76,49 +77,73 @@ int main(int argc, char **argv) {
     });
 
     VideoCapture cap;
+    Mat frame;
+    mutex bufferMutex;
+    clock_t last_time=0;
+    int count=0;
+    std::thread bufferthread([&]() {
+        int key = 0;
+        while (!finish) {
+            if (cap.open(string(argv[3])),CV_CAP_DSHOW) {
+                cout << "video stream reconnected!" << endl;
+                cap.set(CV_CAP_PROP_FPS,30);
+                while (true) {
+                    {
+//                        unique_lock<mutex> lock(bufferMutex);
+                        cap.read(frame);
+                        count += 1;
+                        if (last_time == 0) {
+                            last_time = clock();
+                        } else if (clock() - last_time >= 2 * CLOCKS_PER_SEC) {
+                            double flush_rate = count / (double(clock() - last_time) / double(CLOCKS_PER_SEC));
+                            cout <<  flush_rate << endl;
+                            last_time = clock();
+                            count = 0;
+                        }
+                    }
+                    if (frame.empty()) {
+                        key++;
+                        if (key >= 25) {
+                            key=0;
+                            break;
+                        } else {
+                            continue;
+                        }
+                    } else {
+                        key = 0;
+                    }
+                }
+            }
+            cout << "video stream disconnected! sleep 1s." << endl;
+            sleep(1);
+        }
+    });
+
 
     std::thread runthread([&]() {  // Start in new thread
-        while (!cap.open(string(argv[3]))) {
-            sleep(2);
-        }
-
         Mat C_Tcw;
-        int key = 0;
+
         struct timespec tn;
         double tframe;
-        Mat frame;
+
         cout << endl << "-------" << endl;
         cout << "Start processing sequence ..." << endl;
         int inited = 0;
 
-
         while (!finish) {
-            if (!cap.isOpened() && !cap.open(string(argv[3]))) {
-                sleep(2);
-                continue;
+            Mat temp;
+            {
+//                unique_lock<mutex> lock(bufferMutex);
+//                frame.copyTo(temp);
             }
-
-
             clock_gettime(CLOCK_REALTIME, &tn);
             tframe = double(tn.tv_sec) + double(tn.tv_nsec) / 1e9;
-//            cout << "time: " << tframe << endl;
-            cap.read(frame);
-
-            if (frame.empty()) {
-                key++;
-                if (key >= 5) {
-                    break;
-                } else {
-                    continue;
-                }
-            } else {
-                key = 0;
-            }
-
-            C_Tcw = SLAM.TrackMonocular(frame, tframe);
-            if (inited == 0) {
+            if(!frame.empty()){
+                C_Tcw = SLAM.TrackMonocular(frame, tframe);
+                if (inited == 0) {
 //                osmap.mapLoad("myHome.yaml");
-                inited++;
+                    inited++;
+                }
             }
         }
     });
@@ -126,6 +151,7 @@ int main(int argc, char **argv) {
     SLAM.StartViewer();
     finish = true;
     runthread.join();
+    bufferthread.join();
     server->Shutdown();
     serverthread.join();
     cout << "Tracking thread joined..." << endl;
