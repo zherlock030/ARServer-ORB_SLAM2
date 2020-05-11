@@ -44,9 +44,10 @@ float fy;
 float cx;
 float cy;
 float F = 10;
+string server_address = "0.0.0.0:50051";
 
 int main(int argc, char **argv) {
-    if (argc != 4) {
+    if (argc < 4) {
         cerr << endl << "Usage: ./mono_tum path_to_vocabulary path_to_settings url_of_the_ip_camera" << endl;
         return 1;
     }
@@ -62,9 +63,10 @@ int main(int argc, char **argv) {
     bool finish = false;
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
-    ORB_SLAM2::System SLAM(argv[1], argv[2], ORB_SLAM2::System::MONOCULAR, true);
+    ORB_SLAM2::System SLAM(argv[1], argv[2], \
+    ORB_SLAM2::System::MONOCULAR, true);
     ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
-    string server_address = "0.0.0.0:50051";
+
     Transfer service(&SLAM);
     grpc::ServerBuilder builder;
     builder.AddListeningPort(server_address, grpc::InsecureServerCredentials());
@@ -79,32 +81,38 @@ int main(int argc, char **argv) {
     VideoCapture cap;
     Mat frame;
     mutex bufferMutex;
-    clock_t last_time=0;
-    int count=0;
+    chrono::steady_clock::time_point receive_time_start;
+//    int receive_count = 0;
     std::thread bufferthread([&]() {
         int key = 0;
         while (!finish) {
-            if (cap.open(string(argv[3])),CV_CAP_DSHOW) {
+            if (cap.open(string(argv[3]))) {
                 cout << "video stream reconnected!" << endl;
-                cap.set(CV_CAP_PROP_FPS,30);
+//                cap.set(CV_CAP_PROP_FPS, 30);
+                cap.set(CV_CAP_PROP_BUFFERSIZE, 1);
+
                 while (true) {
-                    {
-//                        unique_lock<mutex> lock(bufferMutex);
-                        cap.read(frame);
-                        count += 1;
-                        if (last_time == 0) {
-                            last_time = clock();
-                        } else if (clock() - last_time >= 2 * CLOCKS_PER_SEC) {
-                            double flush_rate = count / (double(clock() - last_time) / double(CLOCKS_PER_SEC));
-                            cout <<  flush_rate << endl;
-                            last_time = clock();
-                            count = 0;
-                        }
+                    bool has_image = cap.grab();
+                    if (has_image){
+                        receive_time_start = chrono::steady_clock::now();
+                        cap.retrieve(frame);
+                        auto time_used = chrono::duration_cast<chrono::microseconds>(
+                            chrono::steady_clock::now() - receive_time_start);
+                        cout<<"decode one frame: "<<time_used.count()<<"."<<endl;
                     }
-                    if (frame.empty()) {
+
+//                    receive_count += 1;
+//
+//                    if (time_used.count()>1) {
+//                        double frame_rate = receive_count / time_used.count();
+//                        cout << frame_rate << endl;
+//                        receive_time_start = chrono::steady_clock::now();
+//                        receive_count = 0;
+//                    }
+                    if (!has_image) {
                         key++;
                         if (key >= 25) {
-                            key=0;
+                            key = 0;
                             break;
                         } else {
                             continue;
@@ -119,7 +127,8 @@ int main(int argc, char **argv) {
         }
     });
 
-
+    chrono::steady_clock::time_point track_time_start;
+    int track_count = 0;
     std::thread runthread([&]() {  // Start in new thread
         Mat C_Tcw;
 
@@ -129,19 +138,23 @@ int main(int argc, char **argv) {
         cout << endl << "-------" << endl;
         cout << "Start processing sequence ..." << endl;
         int inited = 0;
-
+        track_time_start = chrono::steady_clock::now();
         while (!finish) {
-            Mat temp;
-            {
-//                unique_lock<mutex> lock(bufferMutex);
-//                frame.copyTo(temp);
-            }
             clock_gettime(CLOCK_REALTIME, &tn);
             tframe = double(tn.tv_sec) + double(tn.tv_nsec) / 1e9;
-            if(!frame.empty()){
+            if (!frame.empty()) {
                 C_Tcw = SLAM.TrackMonocular(frame, tframe);
-                if (inited == 0) {
-//                osmap.mapLoad("myHome.yaml");
+                track_count += 1;
+                auto time_used = chrono::duration_cast<chrono::duration<double>>(
+                        chrono::steady_clock::now() - track_time_start);
+                if (time_used.count()>1) {
+                    double frame_rate = track_count / time_used.count();
+                    cout << frame_rate << endl;
+                    track_time_start = chrono::steady_clock::now();
+                    track_count = 0;
+                }
+                if (inited == 0&&argc>=6) {
+                    osmap.mapLoad(argv[5]);
                     inited++;
                 }
             }
@@ -149,16 +162,16 @@ int main(int argc, char **argv) {
     });
     // Start the visualization thread
     SLAM.StartViewer();
+
     finish = true;
-    runthread.join();
-    bufferthread.join();
     server->Shutdown();
+//    runthread.join();
+    bufferthread.join();
     serverthread.join();
     cout << "Tracking thread joined..." << endl;
     // Stop all threads
-    osmap.mapSave("myHome");
+    if(argc>=5)
+        osmap.mapSave(argv[4]);
     SLAM.Shutdown();
-
-
     return 0;
 }

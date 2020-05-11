@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8)
 project(ORB_SLAM2)
 # Temp for my mac
-set(OpenCV_DIR /usr/local/opt/opencv@3/share/OpenCV)
+#set(OpenCV_DIR /usr/local/opt/opencv@3/share/OpenCV)
 include(FindProtobuf)
 find_package(Protobuf REQUIRED)
 find_package(gRPC CONFIG REQUIRED)
@@ -91,8 +91,8 @@ target_link_libraries(${PROJECT_NAME}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
-${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.dylib
-${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.dylib
+${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
+${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
 )
 
 # Build examples
