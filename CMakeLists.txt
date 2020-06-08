@@ -10,13 +10,13 @@ include_directories(
         ${PROTOBUF_INCLUDE_DIR}
 )
 
-#IF(NOT CMAKE_BUILD_TYPE)
+IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
-#ENDIF()
+ENDIF()
 
 MESSAGE("Build type: " ${CMAKE_BUILD_TYPE})
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS}  -Wall  -O3 -march=native ")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall  -O3 -march=native ")
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall   -O3 -march=native")
 
 # Check C++11 or C++0x support
@@ -53,6 +53,7 @@ ${PROJECT_SOURCE_DIR}
 ${PROJECT_SOURCE_DIR}/include
 ${EIGEN3_INCLUDE_DIR}
 ${Pangolin_INCLUDE_DIRS}
+        Examples/Monocular/proto
 )
 
 set(CMAKE_LIBRARY_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/lib)
@@ -80,19 +81,19 @@ src/Viewer.cc
         src/Osmap.cpp
         src/osmap.pb.cc
         src/Locater.cpp
-        src/Transfer.cpp
-        src/viewmatrix.grpc.pb.cc
-        src/viewmatrix.pb.cc
+        Examples/Monocular/proto/Transfer.cpp
+        Examples/Monocular/proto/ARConnection.grpc.pb.cc
+        Examples/Monocular/proto/ARConnection.pb.cc
 )
 # Temp for my mac
 target_link_libraries(${PROJECT_NAME}
-        gRPC::grpc++
         ${PROTOBUF_LIBRARIES}
 ${OpenCV_LIBS}
 ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
+        gRPC::grpc++
 )
 
 # Build examples
@@ -129,11 +130,6 @@ Examples/Monocular/mono_euroc.cc)
 target_link_libraries(mono_euroc ${PROJECT_NAME})
 
 add_executable(mono_ipcam
-        Examples/Monocular/mono_ipcam.cc)
-target_link_libraries(mono_ipcam ${PROJECT_NAME})
-
-# Build tools
-set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/tools)
-add_executable(bin_vocabulary
-        tools/bin_vocabulary.cc)
-target_link_libraries(bin_vocabulary ${PROJECT_NAME})
+        Examples/Monocular/mono_ipcam.cc
+       )
+target_link_libraries(mono_ipcam ${PROJECT_NAME} )

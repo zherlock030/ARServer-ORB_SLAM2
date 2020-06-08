@@ -1,0 +1,46 @@
+syntax = "proto3";
+
+option java_package = "org.emnets.ar.arclient";
+option java_multiple_files = true;
+option java_outer_classname = "ARConnectionProto";
+
+package ARConnection;
+
+message MatrixBlock {
+  double r0c0 = 1;
+  double r0c1 = 2;
+  double r0c2 = 3;
+  double r0c3 = 4;
+  double r1c0 = 5;
+  double r1c1 = 6;
+  double r1c2 = 7;
+  double r1c3 = 8;
+  double r2c0 = 9;
+  double r2c1 = 10;
+  double r2c2 = 11;
+  double r2c3 = 12;
+  double r3c0 = 13;
+  double r3c1 = 14;
+  double r3c2 = 15;
+  double r3c3 = 16;
+  bool update = 17;
+}
+
+message Request {
+  string name = 1;
+}
+
+message ImageBlock {
+  int64 size = 1;
+  bytes image = 2;
+}
+
+message Response {
+  string status = 1;
+}
+
+service ARConnectionService {
+  rpc GetViewMatrix (Request) returns (MatrixBlock);
+  rpc UploadImage(stream ImageBlock) returns (Response);
+  rpc RequestReset(Request) returns (Response);
+}

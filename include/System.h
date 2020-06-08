@@ -35,7 +35,9 @@
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
 #include "Viewer.h"
+#include "Transfer.h"
 
+class Transfer;
 namespace ORB_SLAM2
 {
 
@@ -123,6 +125,7 @@ public:
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
     void StartViewer();
+    void SetTrans(Transfer* transfer){mTrans = transfer;}
 //private:
 
     // Input sensor
@@ -136,6 +139,8 @@ public:
 
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
     Map* mpMap;
+
+    Transfer* mTrans= nullptr;
 
     // Tracker. It receives a frame and computes the associated camera pose.
     // It also decides when to insert a new keyframe, create some new MapPoints and
