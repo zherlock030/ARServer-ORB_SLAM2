@@ -167,10 +167,6 @@ int main(int argc, char **argv) {
                     track_time_start = chrono::steady_clock::now();
                     track_count = 0;
                 }
-                if (inited == 0&&argc>=6) {
-                    osmap.mapLoad(argv[5]);
-                    inited++;
-                }
             }
         }
 //    });
