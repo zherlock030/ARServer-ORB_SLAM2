@@ -25,5 +25,5 @@ COPY include /arserver/include
 COPY src /arserver/src
 COPY build-stage-4.sh /arserver/build-stage-4.sh
 RUN cd /arserver && sh build-stage-4.sh
-
+EXPOSE 50051
 ENTRYPOINT ["./arserver/Examples/Monocular/mono_ipcam", "/arserver/Vocabulary/ORBvoc.bin", "/arserver/Examples/Monocular/ipcam.yaml"]
