@@ -23,15 +23,26 @@
 #include<algorithm>
 #include<fstream>
 #include<chrono>
-
+#include <unistd.h>
 #include<opencv2/core/core.hpp>
+#include <sys/time.h>
+#include <time.h>
 
 #include<System.h>
 
 using namespace std;
 
+
+
 void LoadImages(const string &strFile, vector<string> &vstrImageFilenames,
                 vector<double> &vTimestamps);
+
+long time_in_ms(){
+                    struct timeval t;
+                    gettimeofday(&t, NULL);
+                    long time_ms = ((long)t.tv_sec)*1000+(long)t.tv_usec/1000;
+                    return time_ms;
+                }
 
 int main(int argc, char **argv)
 {
@@ -46,6 +57,9 @@ int main(int argc, char **argv)
     vector<double> vTimestamps;
     string strFile = string(argv[3])+"/rgb.txt";
     LoadImages(strFile, vstrImageFilenames, vTimestamps);
+    //***zh, 第一张加载的图片就是文件夹的第一张图，没有跳过什么。
+    //cout << "first image is " << vstrImageFilenames[0]<<endl;
+    //getchar();
 
     int nImages = vstrImageFilenames.size();
 
@@ -66,7 +80,12 @@ int main(int argc, char **argv)
     {
         // Read image from file
         im = cv::imread(string(argv[3])+"/"+vstrImageFilenames[ni],CV_LOAD_IMAGE_UNCHANGED);
+        //cout << "this pic has " << im.rows << " rows " << im.cols << " cols " << im.channels() << " channels." << endl;
+        cout << endl;
+        cout << endl;
+        cout << "monotum.cc::the filename is " << string(argv[3]) << "/" << vstrImageFilenames[ni] << endl;
         double tframe = vTimestamps[ni];
+        //cout << "tframe is " << tframe <<endl;
 
         if(im.empty())
         {
@@ -74,25 +93,31 @@ int main(int argc, char **argv)
                  << string(argv[3]) << "/" << vstrImageFilenames[ni] << endl;
             return 1;
         }
-
-#ifdef COMPILEDWITHC11
+//***zh
+//#ifdef COMPILEDWITHC11
+//#ifdef COMPILEDWITHC14
         std::chrono::steady_clock::time_point t1 = std::chrono::steady_clock::now();
-#else
-        std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
-#endif
+//#else
+//        std::chrono::monotonic_clock::time_point t1 = std::chrono::monotonic_clock::now();
+//#endif
 
+        long start = time_in_ms();//***zh
         // Pass the image to the SLAM system
-        SLAM.TrackMonocular(im,tframe);
+        SLAM.TrackMonocular(im,tframe,ni);//***zh
+        long end = time_in_ms();
+        std::cout << end - start << " ms for SLAM tracking" <<endl;
 
-#ifdef COMPILEDWITHC11
+//#ifdef COMPILEDWITHC11
+//#ifdef COMPILEDWITHC14
         std::chrono::steady_clock::time_point t2 = std::chrono::steady_clock::now();
-#else
-        std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
-#endif
+//#else
+//        std::chrono::monotonic_clock::time_point t2 = std::chrono::monotonic_clock::now();
+//#endif
 
         double ttrack= std::chrono::duration_cast<std::chrono::duration<double> >(t2 - t1).count();
 
         vTimesTrack[ni]=ttrack;
+        //cout << "ttrack is " << ttrack <<endl;
 
         // Wait to load the next frame
         double T=0;
@@ -100,9 +125,12 @@ int main(int argc, char **argv)
             T = vTimestamps[ni+1]-tframe;
         else if(ni>0)
             T = tframe-vTimestamps[ni-1];
-
+        //cout << endl << " test 5.21 " << vstrImageFilenames[0] << endl;
+        if(vstrImageFilenames[0].length() < 15)//***zh
+            T = T * 0.033; //***zh
         if(ttrack<T)
-            usleep((T-ttrack)*1e6);
+            usleep((T-ttrack)*1e6);//**zh
+
     }
 
     // Stop all threads
@@ -122,6 +150,13 @@ int main(int argc, char **argv)
     // Save camera trajectory
     SLAM.SaveKeyFrameTrajectoryTUM("KeyFrameTrajectory.txt");
 
+    char IsSaveMap;
+    cout << "Do you want to save the map?(Y/N)" << endl;
+    cin >> IsSaveMap;
+    if(IsSaveMap == 'Y' || IsSaveMap == 'y')
+        SLAM.SaveMap("MapPointandKeyFrame.bin");
+
+
     return 0;
 }
 
@@ -135,6 +170,8 @@ void LoadImages(const string &strFile, vector<string> &vstrImageFilenames, vecto
     getline(f,s0);
     getline(f,s0);
     getline(f,s0);
+
+
 
     while(!f.eof())
     {

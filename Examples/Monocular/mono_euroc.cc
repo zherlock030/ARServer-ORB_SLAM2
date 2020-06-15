@@ -27,7 +27,7 @@
 #include<opencv2/core/core.hpp>
 
 #include<System.h>
-#include "Osmap.h"
+//#include "Osmap.h"
 #include <unistd.h>
 
 using namespace std;
@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 
     // Create SLAM system. It initializes all system threads and gets ready to process frames.
     ORB_SLAM2::System SLAM(argv[1], argv[2], ORB_SLAM2::System::MONOCULAR, false);
-    ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
+    //ORB_SLAM2::Osmap osmap = ORB_SLAM2::Osmap(SLAM);
 
     // Vector for tracking time statistics
     vector<float> vTimesTrack;

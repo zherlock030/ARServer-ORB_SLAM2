@@ -2,13 +2,13 @@ cmake_minimum_required(VERSION 2.8)
 project(ORB_SLAM2)
 # Temp for my mac
 #set(OpenCV_DIR /usr/local/opt/opencv@3/share/OpenCV)
-include(FindProtobuf)
-find_package(Protobuf REQUIRED)
-find_package(gRPC CONFIG REQUIRED)
+#include(FindProtobuf)
+#find_package(Protobuf REQUIRED)
+#find_package(gRPC CONFIG REQUIRED)
 
-include_directories(
-        ${PROTOBUF_INCLUDE_DIR}
-)
+#include_directories(
+#        ${PROTOBUF_INCLUDE_DIR}
+#)
 
 IF(NOT CMAKE_BUILD_TYPE)
   SET(CMAKE_BUILD_TYPE Release)
@@ -37,13 +37,15 @@ endif()
 
 LIST(APPEND CMAKE_MODULE_PATH ${PROJECT_SOURCE_DIR}/cmake_modules)
 
-find_package(OpenCV 3.0 QUIET)
-if(NOT OpenCV_FOUND)
-   find_package(OpenCV 2.4.3 QUIET)
-   if(NOT OpenCV_FOUND)
-      message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
-   endif()
-endif()
+set(OpenCV_DIR "/home/zherlock/opencv-2.4.9/build/")
+find_package(OpenCV 2.4.9 QUIET)
+#find_package(OpenCV 3.0 QUIET)
+#if(NOT OpenCV_FOUND)
+#   find_package(OpenCV 2.4.3 QUIET)
+#   if(NOT OpenCV_FOUND)
+#      message(FATAL_ERROR "OpenCV > 2.4.3 not found.")
+#   endif()
+#endif()
 
 find_package(Eigen3 3.1.0 REQUIRED)
 find_package(Pangolin REQUIRED)
@@ -78,12 +80,15 @@ src/KeyFrameDatabase.cc
 src/Sim3Solver.cc
 src/Initializer.cc
 src/Viewer.cc
-        src/Osmap.cpp
-        src/osmap.pb.cc
+src/InitKeyFrame.cc
+src/SystemSetting.cc
+src/Object.cc
+#        src/Osmap.cpp
+#        src/osmap.pb.cc
         src/Locater.cpp
-        Examples/Monocular/proto/Transfer.cpp
-        Examples/Monocular/proto/ARConnection.grpc.pb.cc
-        Examples/Monocular/proto/ARConnection.pb.cc
+#        Examples/Monocular/proto/Transfer.cpp
+#        Examples/Monocular/proto/ARConnection.grpc.pb.cc
+#        Examples/Monocular/proto/ARConnection.pb.cc
 )
 # Temp for my mac
 target_link_libraries(${PROJECT_NAME}
@@ -93,7 +98,7 @@ ${EIGEN3_LIBS}
 ${Pangolin_LIBRARIES}
 ${PROJECT_SOURCE_DIR}/Thirdparty/DBoW2/lib/libDBoW2.so
 ${PROJECT_SOURCE_DIR}/Thirdparty/g2o/lib/libg2o.so
-        gRPC::grpc++
+#       gRPC::grpc++
 )
 
 # Build examples
@@ -129,7 +134,11 @@ add_executable(mono_euroc
 Examples/Monocular/mono_euroc.cc)
 target_link_libraries(mono_euroc ${PROJECT_NAME})
 
-add_executable(mono_ipcam
-        Examples/Monocular/mono_ipcam.cc
-       )
-target_link_libraries(mono_ipcam ${PROJECT_NAME} )
+#add_executable(mono_ipcam
+#        Examples/Monocular/mono_ipcam.cc
+#       )
+#target_link_libraries(mono_ipcam ${PROJECT_NAME} )
+
+add_definitions(-w)
+
+

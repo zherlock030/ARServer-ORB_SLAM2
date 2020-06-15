@@ -35,9 +35,9 @@
 #include "KeyFrameDatabase.h"
 #include "ORBVocabulary.h"
 #include "Viewer.h"
-#include "Transfer.h"
+//#include "InstanceDetect.h"
 
-class Transfer;
+
 namespace ORB_SLAM2
 {
 
@@ -58,6 +58,7 @@ public:
         RGBD=2
     };
 
+
 public:
 
     // Initialize the SLAM system. It launches the Local Mapping, Loop Closing and Viewer threads.
@@ -67,6 +68,7 @@ public:
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackStereo(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp);
+    cv::Mat TrackStereoWithIMU(const cv::Mat &imLeft, const cv::Mat &imRight, const double &timestamp, const float current_yaw_angle_accums);
 
     // Process the given rgbd frame. Depthmap must be registered to the RGB frame.
     // Input image: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
@@ -78,6 +80,7 @@ public:
     // Input images: RGB (CV_8UC3) or grayscale (CV_8U). RGB is converted to grayscale.
     // Returns the camera pose (empty if tracking fails).
     cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp);
+    cv::Mat TrackMonocular(const cv::Mat &im, const double &timestamp, int matID);
 
     // This stops local mapping thread (map building) and performs only camera tracking.
     void ActivateLocalizationMode();
@@ -116,7 +119,10 @@ public:
 
     // TODO: Save/Load functions
     // SaveMap(const string &filename);
+    void SaveMap(const string &filename);
+
     // LoadMap(const string &filename);
+    void LoadMap(const string &filename, SystemSetting* mySystemSetting);
 
     // Information from most recent processed frame
     // You can call this right after TrackMonocular (or stereo or RGBD)
@@ -124,9 +130,12 @@ public:
     std::vector<MapPoint*> GetTrackedMapPoints();
     std::vector<cv::KeyPoint> GetTrackedKeyPointsUn();
 
-    void StartViewer();
-    void SetTrans(Transfer* transfer){mTrans = transfer;}
-//private:
+    // Self defined pointer to save images on my disk:
+    void SetSaveImageFlag();
+    void SetViewerIMUFlagTrue();
+    void SetViewerIMUFlagFalse();
+
+private:
 
     // Input sensor
     eSensor mSensor;
@@ -140,8 +149,6 @@ public:
     // Map structure that stores the pointers to all KeyFrames and MapPoints.
     Map* mpMap;
 
-    Transfer* mTrans= nullptr;
-
     // Tracker. It receives a frame and computes the associated camera pose.
     // It also decides when to insert a new keyframe, create some new MapPoints and
     // performs relocalization if tracking fails.
@@ -154,6 +161,9 @@ public:
     // a pose graph optimization and full bundle adjustment (in a new thread) afterwards.
     LoopClosing* mpLoopCloser;
 
+    //Instance detector, it detects instances with faster-recognition
+    //InstanceDetect* mpInstanceDetector;
+
     // The viewer draws the map and the current camera pose. It uses Pangolin.
     Viewer* mpViewer;
 
@@ -165,6 +175,7 @@ public:
     std::thread* mptLocalMapping;
     std::thread* mptLoopClosing;
     std::thread* mptViewer;
+    std::thread* mptInstanceDetecting;
 
     // Reset flag
     std::mutex mMutexReset;
@@ -180,6 +191,8 @@ public:
     std::vector<MapPoint*> mTrackedMapPoints;
     std::vector<cv::KeyPoint> mTrackedKeyPointsUn;
     std::mutex mMutexState;
+
+    std::string mySettingsFile;
 };
 
 }// namespace ORB_SLAM

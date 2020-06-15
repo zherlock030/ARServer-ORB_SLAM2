@@ -1,11 +1,11 @@
-cd Thirdparty/Pangolin
-rm -r build
-mkdir build
-cd build
-cmake .. -DCMAKE_BUILD_TYPE=Release
-make -j4
+#cd Thirdparty/Pangolin
+#rm -r build
+#mkdir build
+#cd build
+#cmake .. -DCMAKE_BUILD_TYPE=Release
+#make -j4
 
-cd ../../..
+#cd ../../..
 
 echo "Configuring and building Thirdparty/DBoW2 ..."
 cd Thirdparty/DBoW2
